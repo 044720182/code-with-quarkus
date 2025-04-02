@@ -1,38 +1,38 @@
 package org.acme.rest;
 
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Set;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.acme.repository.BookRepository;
+
+import jakarta.inject.Inject;
+import java.util.List;
+import org.acme.entity.Book;
 
 @Path("/books")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class BookResource {
 
-    private final Set<Book> books = Collections.newSetFromMap(
-            Collections.synchronizedMap(new LinkedHashMap<>()));
-
-    public BookResource() {
-        books.add(new Book("Refactoring", "Martin Fowler"));
-        books.add(new Book("Head First Design Patterns", "Eric Freemon"));
-    }
+    @Inject
+    BookRepository bookRepository;
 
     @GET
-    public Set<Book> list() {
-        return books;
+    public List<Book> list() {
+        return bookRepository.listAll();
     }
 
     @POST
-    public Set<Book> add(Book book) {
-        books.add(book);
-        return books;
+    @Transactional
+    public Book add(Book book) {
+        bookRepository.persist(book);
+        return book;
     }
 
     @DELETE
-    public Set<Book> delete(Book book) {
-        books.removeIf(existingBook -> existingBook.getTitle().contentEquals(book.getTitle()));
-        return books;
+    @Path("/{id}")
+    @Transactional
+    public void delete(@PathParam("id") Long id) {
+        bookRepository.deleteById(id);
     }
 }
